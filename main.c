@@ -1,210 +1,253 @@
 /*
- * TITLE: PROGRAMMING II LABS
- * SUBTITLE: Practical 1
- * AUTHOR 1: RITA CERNADAS TUBIO LOGIN 1:rita.cernadas
- * AUTHOR 2: ÁLVARO DÍAZ DÍAZ LOGIN 2: alvaro.ddiaz
- * GROUP: 3.1
- * DATE: 20 / 3 / 20
+ * TITLE: PROGRAMMING II LABS                  SUBTITLE: Practical 2
+ * AUTHOR 1: RITA CERNADAS TUBIO               LOGIN 1: rita.cernadas
+ * AUTHOR 2: ÁLVARO DÍAZ DÍAZ                  LOGIN 2: alvaro.ddiaz
+ * GROUP: 3.1                                  DATE: 8/05/2020
  */
 
 #include <stdio.h>
 #include <stdlib.h>
 #include "types.h"
-#include <string.h>
+#include "center_list.h"
 #define CODE_LENGTH 2
 
-#ifdef STATIC_LIST
-#include "static_list.h"
-#endif
-#ifdef DYNAMIC_LIST
-#include "dynamic_list.h"
-#endif
-#ifdef TEST_LIST
-#include "list/list.h"
-#endif
+void Create (tCenterName centerName, tNumVotes totalVoters, tListC *L){
 
-void new (tPartyName partyName, tList *L){
-    /*Objetivo: Crear un nuevo partido e introducirlo al final de la lista con los votos inicializados a 0.
-    Entradas: Nombre del partido y lista donde introducirlo.
-    Salidas: La lista modificada.
-    Precondiciones: No es posible incorporar partidos si ya se ha ejecutado la orden vote y que la lista esté inicializada.
-    Postcondiciones: Ninguna.*/
+    tItemC datosCenter;
 
-    tItemL dato;
+    if (findItemC(centerName,*L) == NULLC) {                // Si el centro electoral no está en la lista
+        strcpy(datosCenter.centerName,centerName);          // Inicializamos los campos del centro
+        datosCenter.totalVoters = totalVoters;
+        datosCenter.nullVotes = 0;
+        datosCenter.validVotes = 0;
+        datosCenter.partyList = 0;
+        if (!(insertItemC(datosCenter, L))) {               // Si no se puede insertar el centro electoral
+            deleteList((tList *) datosCenter.partyList);               // Eliminamos la lista de partidos del centro electoral
+            printf("+ Error: Create not possible \n");
+        }
+        else                                               // Si se puede insertar el centro electoral
+            printf("* Create: center %s totalvoters %d\n", centerName, totalVoters);
+    }
+    else
+        printf("+ Error: Create not possible \n");  // Si el centro electoral está en la lista
+}
 
-    if (findItem(partyName, *L) == LNULL){ //En caso de que el partido no esté en la lista, lo inicializamos con votos a 0.
-        strcpy(dato.partyName, partyName);
-        dato.numVotes = 0;
-        if (insertItem(dato,LNULL,L) == true )//Insertamos en la lista.
-            printf("* New: party %s\n", partyName);
+void New (tCenterName centerName, tPartyName partyName, tListC *L) {
+
+    tPosC posCenter;
+    tPosL posPart;
+    tItemC datosCenter;
+    tItemL datosPart;
+
+
+    if (!(isEmptyListC(*L))) {                              // Si a lista no está vacía
+        posCenter = findItemC(centerName, *L);              // Buscamos el centro en la lista
+        if (posCenter != NULLC) {                           // Si la posición del centro no es nula
+            datosCenter = getItemC(posCenter, *L);          // Seleccionamos los datos del centro e inicializamos los campos
+            strcpy(datosPart.partyName, partyName);
+            datosPart.numVotes = 0;
+            posPart = findItem(partyName, datosCenter.partyList);
+            if ((posPart == LNULL) && (insertItem(datosPart, &datosCenter.partyList)) == true) { // Insertamos el partido en la lista de partidos
+                updateListC(datosCenter.partyList, posCenter, L); // Actualizamos la lista de partidos
+                printf("* New: center %s party %s \n", centerName, partyName);
+            }
+            else {
+                printf("+ Error: New not possible \n");
+            }
+        }
         else{
-            printf("+ Error: New not possible\n");
+            printf("+ Error: New not possible \n");
         }
     }
-    else { //en caso de que el partido exista.
-        printf("+ Error: New not possible\n");
-    }
 }
 
-void vote (tPartyName partyName, tList *L, tNumVotes *nulos, tNumVotes *votos){
-    /*Objetivo: Incrementar en 1 el número de votos de un partido de la lista.
-    Entradas: Nombre del partido a votar, la lista y el número de votos y de nulos.
-    Salidas: La lista modificada y el número de votos y de nulos modificado.
-    Precondiciones: La lista no está vacía.
-    Postcondiciones: Ninguna.*/
-
+void Vote (tCenterName centerName, tPartyName partyName, tListC *L){
+    tPosC posCenter;
     tPosL posPart;
-    tItemL datos;
+    tItemC datosCenter;
+    tItemL datosPart;
+    tList listaPartidos;
 
-    posPart = findItem(partyName,*L); // Buscamos el partido en la lista de partidos.
-    if (posPart != LNULL){ // En caso de que el partido esté en la lista.
-        datos = getItem(posPart,*L);
-        updateVotes(datos.numVotes+1,posPart,L); //Incrementamos el número de votos en 1.
-        *votos += 1;
-        printf("* Vote: party %s numvotes %d\n", partyName, datos.numVotes+1);
-    }
-    else{ //El partido no está en la lista, se incrementa el número de votos nulos
-        *nulos += 1;
-        printf("+ Error: Vote not possible. Party %s not found. NULLVOTE\n", partyName);
-    }
-}
-
-void stats (tPartyName censados, tList L,tNumVotes nulos,tNumVotes votos){
-    /*Objetivo: Mostrar la lista completa de partidos actuales y el porcentaje de participación.
-    Entradas: Una lista, los partidos de esta y el número de votos y de nulos.
-    Salidas: Mensajes con las estadísticas correspondientes.
-    Precondiciones: La lista no está vacía.
-    Postcondiciones: Ninguna*/
-
-    tPosL posPart;
-    tItemL datos;
-
-    posPart = first(L); // Seleccionamos el primer partido.
-    while( posPart != LNULL){ // Recorremos la lista de los partidos.
-        datos = getItem(posPart,L);
-        if (datos.numVotes != 0) { // En caso de que ese partido tenga votos.
-            printf("Party %s numvotes %d (%.2f%%)\n", datos.partyName, datos.numVotes,
-                   (double) datos.numVotes * 100 / votos); //comprobar
+    posCenter = findItemC(centerName, *L);                  // Seleccionamos la posición del centro
+    if (posCenter != NULLC){                                // Si la posición no es nula
+        datosCenter = getItemC(posCenter,*L);
+        listaPartidos = datosCenter.partyList;
+        posPart = findItem(partyName, listaPartidos);
+        if (posPart != NULL){                                                              // Si el centro no está una posición nula
+            datosPart = getItem(posPart, L);
+            updateVotes(++datosPart.numVotes, posPart, &listaPartidos);                   // Actualizamos el número de votos del partido
+            updateValidVotesC(datosCenter.validVotes+1,posCenter,L);               // Actualizamos el número de votos válidos do centro electoral
+            printf("* Vote: center %s party %s numvotes %d \n",centerName,partyName,datosPart.numVotes);
         }
-        else{ // Partido sin votos.
-            printf("Party %s numvotes %d (0.00%%)\n", datos.partyName, datos.numVotes);
+        else {
+            updateNullVotesC(datosCenter.nullVotes + 1, posCenter,L);              // Actualizamos el número de votos nulos do centro electoral
+            printf("+ Error: Vote not possible. Party %s not found in center %s. NULLVOTE\n", partyName, centerName);
         }
-        posPart = next(posPart,L); // Accedemos al siguiente partido.
     }
-    printf("Null votes %d\n", nulos);
-    if (censados != 0) {
-        printf("Participation: %d votes from %s voters (%.2f%%)\n", votos + nulos, censados,
-               (double) (votos + nulos) * 100 / atol(censados));
-    }
+    else
+        printf("+ Error: Vote not possible \n");
 }
 
-void illegalize (tPartyName partyName, tList* L, tNumVotes *nulos, tNumVotes *votos){
-    /*Objetivo: Mostrar la lista completa de partidos actuales y el porcentaje de participación.
-    Entradas: Una lista, los partidos de ésta y el número de votos nulos.
-    Salidas: Mensajes con las estadisticas correspondientes.
-    Precondiciones: La lista no está vacía.
-    Postcondiciones: Ninguna.*/
+void Remove (tListC *L) {
 
+    tItemC datosCenter;
+    tPosC posCenter;
+    bool borrado = false;
     tPosL posPart;
-    tItemL datos;
 
-    posPart = findItem(partyName,*L);
-    if( posPart == LNULL){
-        printf("+ Error: Illegalize not possible\n");
-    }
-    else{
-        datos = getItem(posPart,*L);
-        (*nulos) += datos.numVotes;
-        (*votos) -= datos.numVotes;
-        datos.numVotes = 0;
-        updateVotes(datos.numVotes, posPart,L);
-        deleteAtPosition(posPart,L);
-        printf("* Illegalize: party %s\n",partyName);
+    if (!(isEmptyListC(*L))){                               // Si a lista non está vacía
+        posCenter =firstC(*L);
+        while(posCenter!= NULLC){                           // Si la posición no es nula
+            datosCenter = getItemC(posCenter,*L);
+            if(datosCenter.validVotes == 0) {               // Si el número de votos del centro es 0, se elimina
+                printf("holi \n");
+                while (!(isEmptyList(datosCenter.partyList))) {
+                    posPart = first(datosCenter.partyList);
+                    deleteAtPosition(posPart,datosCenter.partyList); // Se borran los partidos hasta que la lista este vacia
+                }printf("acabe guacho bajá\n");
+                 updateListC(datosCenter.partyList,posCenter,L);                           // Actualizamos la lista de centros
+                 printf("* Remove: center %s \n",datosCenter.centerName);
+                 deleteAtPositionC(posCenter,L);                // Eliminamos la posición del centro de la lista de centros
+                 borrado = true;
+            }
+            else posCenter = nextC(posCenter,*L);
+        }
+        if (!borrado){
+            printf("* Remove: no centers removed\n");
+        }
     }
 }
 
-void liberarRecursos(tList* L){
-    /*Objetivo: Vaciar lista de memoria.
-    Entradas:La lista con elementos.
-    Salidas: Ninguna.
-    Precondiciones: La lista no está vacía.
-    Postcondiciones: Ninguna.*/
+void Stats (tListC L){
 
+    tPosC posCenter;
     tPosL posPart;
-    while (!isEmptyList(*L)){ //borramos las posiciones de la lista.
-        posPart = first(*L);
-        deleteAtPosition(posPart,L);
-    }
-    deleteList(L); //eliminamos la lista de memoria.
-}
+    tItemC datosCenter;
+    tItemL datosPart;
 
-void processCommand(char command_number[CODE_LENGTH+1], char command, char param[NAME_LENGTH_LIMIT+1], tList *L, tNumVotes *nulos, tNumVotes *votos) {
-    printf("********************\n");
-    switch(command) {
+    if (!(isEmptyListC(L))){                        // Si la lista de centros no está vacía
+        posCenter = firstC(L);
+        while (posCenter != NULLC){                 // Mientras la posición del centro no sea nula en la lista
+            datosCenter = getItemC(posCenter,L);
+            printf("Center %s\n",datosCenter.centerName);
+            posPart = first(datosCenter.partyList);
+            while (posPart != NULL){                // Mientras la posición del partido no sea nula en la lista
+                datosPart = getItem(posPart,datosCenter.partyList);
+                if (datosPart.numVotes != 0) {      // En caso de que ese partido tenga votos.
+                    printf("Party %s numvotes %d (%.2f%%)\n", datosPart.partyName, datosPart.numVotes,
+                           (double) datosPart.numVotes * 100 / datosCenter.validVotes);
+                }
+                else{                               // Partido sin votos.
+                    printf("Party %s numvotes %d (0.00%%)\n", datosPart.partyName, datosPart.numVotes);
+                }
+                posPart = next(posPart,datosCenter.partyList); // Accedemos al siguiente partido.
+            }
+            printf("Null votes %d\n", datosCenter.nullVotes);
+            if (datosCenter.totalVoters != 0) {
+                printf("Participation: %d votes from %d voters (%.2f%%)\n", datosCenter.validVotes + datosCenter.nullVotes, datosCenter.totalVoters,
+                       (double) (datosCenter.validVotes + datosCenter.nullVotes) * 100 / datosCenter.totalVoters);
+            }
+            posCenter = nextC(posCenter,L);
+        }
+    }
+}
+/*
+
+void LiberarRecursos(tListC *L) {
+
+    tPosC posCenter;
+    tPosL posPart;
+    tItemC datosCenter;
+
+    while(!(isEmptyListC(*L))){
+        posCenter = firstC(*L);
+        datosCenter = getItemC(posCenter,*L);
+        while (!(isEmptyList(datosCenter.partyList))){
+            posPart = first(datosCenter.partyList);
+            deleteAtPosition(posPart, (tList *) datosCenter.partyList);
+        updateListC(datosCenter.partyList,posCenter,L);
+        deleteAtPositionC(posCenter,L);
+        }
+    }
+
+}
+*/
+void processCommand(char commandNumber[CODE_LENGTH+1], char command, char param1[NAME_LENGTH_LIMIT+1], char param2[NAME_LENGTH_LIMIT+1],tListC *L) {
+    printf("******** \n");
+    switch (command) {
+        case 'C': {
+            printf("%s %c: center %s totalvoters %s\n\n", commandNumber, command, param1, param2);
+            Create(param1, atol(param2), L);
+            break;
+        }
         case 'N': {
-            printf("%s %c: party %s\n", command_number, command, param);
-            new(param,L);
+            printf("%s %c: center %s party %s\n\n", commandNumber, command, param1, param2);
+            New(param1, param2, L);
             break;
         }
-        case 'V':{
-            printf("%s %c: party %s\n", command_number, command, param);
-            vote(param,L,nulos, votos);
+        case 'V': {
+            printf("%s %c: center %s party %s\n\n", commandNumber, command, param1, param2);
+            Vote(param1,param2,L);
             break;
         }
-        case 'S':{
-            printf("%s %c: totalvoters %s\n", command_number, command, param);
-            stats(param,*L,*nulos,*votos);
+        case 'R': {
+            printf("%s %c\n\n", commandNumber, command);
+            Remove(L);
             break;
         }
-        case 'I':{
-            printf("%s %c: party %s\n", command_number, command, param);
-            illegalize(param,L,nulos,votos);
+        case 'S': {
+            printf("%s %c\n\n", commandNumber, command);
+            Stats(*L);
             break;
         }
         default: {
             break;
         }
+
     }
 }
 
 void readTasks(char *filename) {
     FILE *df;
-    char command_number[CODE_LENGTH+1], command, param[NAME_LENGTH_LIMIT+1];
-    // Declaración de la lista.
-    tList L;
-    // Declaración de las variables.
-    tNumVotes nulos = 0;
-    tNumVotes votos = 0;
+    char commandNumber[CODE_LENGTH+1], command, param1[NAME_LENGTH_LIMIT+1], param2[NAME_LENGTH_LIMIT+1];
+    tListC L;               // Declaración de la lista.
 
-    createEmptyList(&L);// Inicializamos la lista.
+    createEmptyListC(&L);   // Inicializamos la lista.
     df = fopen(filename, "r");
     if (df != NULL) {
         while (!feof(df)) {
             char format[16];
-            sprintf(format, "%%%is %%c %%%is", CODE_LENGTH, NAME_LENGTH_LIMIT);
-            fscanf(df,format, command_number, &command, param);
-            processCommand(command_number, command, param,&L,&nulos,&votos);
+            sprintf(format, "%%%is %%c ", CODE_LENGTH);
+            fscanf(df, format, commandNumber, &command);
+            if (command == 'S' || command == 'R') {
+                param1[0] = '\0';
+                param2[0] = '\0';
+            } else {
+                sprintf(format, "%%%is %%%is", NAME_LENGTH_LIMIT, NAME_LENGTH_LIMIT);
+                fscanf(df, format, param1, param2);
+            }
+            processCommand(commandNumber, command, param1, param2, &L);
         }
         fclose(df);
     } else {
         printf("Cannot open file %s.\n", filename);
     }
-    liberarRecursos(&L); //eliminamos la lista de memoria.
+    //   LiberarRecursos(&L);    // Eliminamos la lista de memoria.
 }
 
-int main(int nargs, char **args) {
+int main (int nargs, char **args) {
 
-    char *file_name = "new.txt";
+    char *filename = "new.txt";
 
     if (nargs > 1) {
-        file_name = args[1];
+        filename = args[1];
     } else {
 #ifdef INPUT_FILE
-        file_name = INPUT_FILE;
+        filename = INPUT_FILE;
 #endif
     }
 
-    readTasks(file_name);
+    readTasks(filename);
 
     return 0;
 }
