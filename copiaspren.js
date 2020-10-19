@@ -1,6 +1,6 @@
 const readlineSync = require("readline-sync")
 
-var sujeto = ["Juan", "Pedro", "Josefa", "Laura", "Hideo Kojima", "Ramón", "Un grupo de vietnamitas", "El cuerpo de estudiantes", "El equipo directivo", "Ese de ahí", "Esa de ahí", "Pitbull", "Armando Pérez"]
+var sujeto = ["Juan", "Pedro", "Josefa", "Laura", "Hideo Kojima", "Ramón", "Un grupo de vietnamitas", "El cuerpo de estudiantes", "El equipo directivo", "Ese de ahí", "Esa de ahí", "Pitbull", "Armando Pérez", "Venancio", "Un programador"]
 var verbo = ["come", "salta", "baila", "canta", "saltaba", "comía", "bailaba", "estudia", "estudiará", "estudiaba", "saltará", "bailará", "cantará"]
 var cc = ["en el parque", "en su casa", "a la tarde", "al caer el sol", "en el tren", "en la sala de reuniones", "en vietnam", "en Cataluña", "en su país", "porque sí", "porque aprobó", "porque le dejan"]
 
